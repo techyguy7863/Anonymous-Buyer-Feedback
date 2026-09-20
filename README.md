@@ -37,3 +37,25 @@ Consumers prove purchase authenticity and submit genuine 1-5 star ratings **with
 - **Vercel Live Demo**: [https://anonymous-buyer-feedback.vercel.app/](https://anonymous-buyer-feedback.vercel.app/)
 - **Midnight Explorer**: [https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa](https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa)
 - **Contract Address**: `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa` — **CONFIRMED**
+
+---
+
+## Platform Screenshots & Verification
+
+### 1. Main Dashboard & ZK Contract Architecture
+![ABF Main Dashboard](photos/dashboard_home.png)
+
+### 2. Anonymous Buyer Feedback & ZK Proof Portal
+![Submit Feedback Portal](photos/submit-feedback-dashboard.png)
+
+### 3. Merchant Admin Console & Moderation
+![Merchant Admin Console](photos/admin_console.png)
+
+### 4. Midnight On-Chain Contract Explorer
+![Contract Explorer](photos/contract_explorer.png)
+
+### 5. Mobile Responsive UI & Lace Wallet Connector
+![Mobile Responsive UI](photos/mobile-ui-dashboard.png)
+
+### 6. Vitest Unit Test Suite — 10/10 Tests Passing
+![Test Suite](photos/test-run-pass.png)

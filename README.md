@@ -1,6 +1,6 @@
-# Anonymous Buyer Feedback (ABF)
+﻿# Anonymous Buyer Feedback (ABF)
 
-> A decentralized, privacy-preserving zero-knowledge product and merchant review/feedback dApp built on the Midnight Network using Compact smart contracts and Midnight.js SDK.
+> A decentralized, privacy-preserving zero-knowledge consumer product and merchant review/feedback dApp built on the Midnight Network using Compact v0.23 smart contracts and Midnight.js SDK.
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Anonymous--Buyer--Feedback-181717?style=flat-square&logo=github)](https://github.com/techyguy7863/Anonymous-Buyer-Feedback)
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Live_Demo_Video-FF0000?style=flat-square&logo=youtube)](https://youtu.be/I7ErnLLc348)
@@ -10,7 +10,7 @@
 [![Midnight.js SDK](https://img.shields.io/badge/Midnight.js-SDK_Integrated-3b82f6?style=flat-square)](https://midnight.network)
 [![Compact Language](https://img.shields.io/badge/Compact-v0.23-10b981?style=flat-square)](https://midnight.network)
 [![Framework](https://img.shields.io/badge/Framework-Next.js_14-black?style=flat-square&logo=nextdotjs)](https://nextjs.org)
-[![Tests](https://img.shields.io/badge/Tests-10%2F10_Passing-10b981?style=flat-square)](https://github.com/techyguy7863/Anonymous-Buyer-Feedback)
+[![Tests](https://img.shields.io/badge/Tests-35%2F35_Passing-10b981?style=flat-square)](https://github.com/techyguy7863/Anonymous-Buyer-Feedback)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 ---
@@ -18,18 +18,18 @@
 ## Table of Contents
 
 1. [What Is ABF?](#what-is-abf)
-2. [Problem Statement & ZK Solution](#problem-statement--zk-solution)
-3. [Live Deployments & Network Details](#live-deployments--network-details)
-4. [Video Walkthrough](#video-walkthrough)
-5. [Clone & Local Setup Guide](#clone--local-setup-guide)
-6. [Application User Workflows](#application-user-workflows)
+2. [Level 2 & 3 UI Overhaul & Reviewer Improvements](#level-2--3-ui-overhaul--reviewer-improvements)
+3. [Problem Statement & ZK Solution](#problem-statement--zk-solution)
+4. [Live Deployments & Network Details](#live-deployments--network-details)
+5. [Video Walkthrough](#video-walkthrough)
+6. [Clone & Local Setup Guide](#clone--local-setup-guide)
 7. [Compact Smart Contract Circuits (6 Circuits)](#compact-smart-contract-circuits-6-circuits)
 8. [Public Ledger State (8 Fields)](#public-ledger-state-8-fields)
 9. [Private Witnesses (5 Witnesses)](#private-witnesses-5-witnesses)
 10. [Privacy & Security Guarantees Matrix](#privacy--security-guarantees-matrix)
 11. [Platform Screenshots](#platform-screenshots)
 12. [Repository Structure](#repository-structure)
-13. [Testing & Verification](#testing--verification)
+13. [Testing & Verification (35/35 Tests Passing)](#testing--verification-3535-tests-passing)
 
 ---
 
@@ -38,6 +38,33 @@
 **Anonymous Buyer Feedback (ABF)** is a zero-knowledge consumer product and merchant review platform developed for the **Midnight Network**. Built on Compact smart contracts and the official **Midnight.js SDK**, ABF allows consumers to prove purchase validity and submit genuine star ratings (1–5 stars) **without ever disclosing their identity, home address, credit card data, or transaction invoice contents** on-chain or to review aggregators.
 
 By utilizing client-side zero-knowledge witness execution, verified cryptographic proofs are generated right in the customer's browser. Only an irreversible review commitment hash is anchored to the Midnight public ledger — mathematically preventing fake reviews while protecting buyers from doxxing, harassment, or corporate data harvesting.
+
+---
+
+## Level 2 & 3 UI Overhaul & Reviewer Improvements
+
+In response to reviewer feedback (**"work on the UI"**), the dApp interface has been completely transformed into an executive luxury dark-glass Web3 platform:
+
+1. **3D Holographic Buyer Verification Pass**:
+   - Metallic brushed virtual badge with holographic card shimmer animations and 3D flip-to-inspect witness enclave.
+   - Shows verified rating stars, product name, masked commitment (`0x8F32••••••••C71A`), and Midnight ZK watermark.
+
+2. **Interactive Review Submission Portal**:
+   - Interactive star rating selector (1 to 5 stars) with micro-animations and dynamic sentiment badges.
+   - One-click credential presets (`iPhone 16 Order (5★)`, `Sony Headphones (5★)`, `Dell Laptop (4★)`).
+   - Digital VIP Proof Certificate receipt with on-chain transaction hash and Midnight Explorer deep links.
+
+3. **Dual-Mode Verifier Engine**:
+   - Allows public auditing of any 32-byte review commitment hash or transaction hash against Midnight ledger state.
+
+4. **Executive Merchant Governance Center**:
+   - Tabbed modules for authority anchoring (`setMerchantCommitment`), review dispute flagging (`flagFeedback`), catalog rotation (`resetMerchantProduct`), and replay protection nonce bumping (`incrementSession`).
+
+5. **On-Chain Contract State Explorer & GraphQL Console**:
+   - Live ledger state polling with real-time refresh of all 8 public fields, raw JSON inspector, and live Midnight Subindexer GraphQL query console.
+
+6. **Interactive Wallet Connection Modal**:
+   - Multi-wallet connection modal supporting **Midnight Lace Wallet** and **1AM Wallet** with live network telemetry.
 
 ---
 
@@ -89,114 +116,31 @@ Follow this step-by-step guide to clone, install, test, and run the Anonymous Bu
 ### Prerequisites
 
 Ensure you have the following installed on your system:
-- **Node.js**: Version `18.x`, `20.x`, or `22.x` ([Download Node.js](https://nodejs.org))
-- **npm**: Version `9.x` or higher (bundled with Node.js)
-- **Git**: Version `2.x` or higher ([Download Git](https://git-scm.com))
-- **Midnight Lace Wallet** (Optional for live testnet transaction signing): Install the Midnight Lace browser extension and switch the network to **Preview Testnet**.
+- **Node.js**: v18.17.0 or higher
+- **npm**: v9.0.0 or higher
+- **Midnight Lace Wallet** or **1AM Wallet** browser extension
 
----
-
-### Step 1: Clone the Repository
-
-Clone the repository from GitHub using `git`:
+### Step-by-Step Installation
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/techyguy7863/Anonymous-Buyer-Feedback.git
-```
-
-Navigate into the project directory:
-
-```bash
 cd Anonymous-Buyer-Feedback
-```
 
----
-
-### Step 2: Install Dependencies
-
-Install the project dependencies (including Next.js 14, React 18, Midnight.js SDK packages, and Vitest):
-
-```bash
+# 2. Install dependencies
 npm install
-```
 
-> **Note**: No `.env` file is required to start testing or exploring. The application automatically connects to the on-chain Midnight Preview contract (`0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa`) and public testnet indexer endpoints.
-
----
-
-### Step 3: Run the Automated Unit Tests
-
-Run the Vitest test suite to verify contract structure, witness completeness, and privacy constraints:
-
-```bash
+# 3. Run automated test suite (35/35 tests passing)
 npm run test
-```
 
-Expected output:
-```text
- ✓ tests/counter.test.ts (10 tests)
- Test Files  1 passed (1)
-      Tests  10 passed (10)
-```
-
----
-
-### Step 4: Start the Local Development Server
-
-Run the development server:
-
-```bash
+# 4. Start local development server
 npm run dev
-```
 
-Open your browser and navigate to:
-```text
-http://localhost:3000
-```
-
-The dApp will load with full interactive features:
-- **/** : Dashboard with live stats and deployed contract details.
-- **/submit** : Anonymous feedback submission and review prover portal.
-- **/merchant** : Merchant governance, moderation, and catalog rotation console.
-- **/explorer** : On-chain contract state and 8 ledger fields explorer.
-
----
-
-### Step 5: Build for Production
-
-To create an optimized production build:
-
-```bash
+# 5. Build for production
 npm run build
 ```
 
-To start the production server locally after building:
-
-```bash
-npm run start
-```
-
----
-
-## Application User Workflows
-
-### 1. Consumer Review Prover Flow (`/submit`)
-1. **Enter Target Merchant ID**: Specify the product or brand identifier (e.g., `merchant_apple_store_us`).
-2. **Provide Buyer Witness Data**: Enter your private buyer key and purchase invoice ID (e.g., `INV-2026-987452-AMZ`). These are processed strictly client-side and never broadcast.
-3. **Select Star Rating**: Choose a rating from 1 to 5 stars.
-4. **Generate Proof**: Click **Generate ZK Review Proof**. The client-side prover computes the Poseidon/Pedersen review commitment hash.
-5. **On-Chain Anchor**: The review commitment is published on Midnight Preview Testnet, incrementing the verified `feedbackCount` ledger counter.
-6. **Instant Verification**: Use the **Verify Commitment** tool to confirm the proof's on-chain authenticity in sub-second time.
-
-### 2. Merchant Governance Flow (`/merchant`)
-1. **Set Authority & Minimum Rating**: Merchant signs with their private authority key to anchor brand legitimacy and configure review thresholds.
-2. **Moderate Fraudulent Claims**: Merchant flags suspect review commitment hashes using the `flagFeedback` circuit.
-3. **Epoch Rotation**: Merchants can rotate product catalog identifiers and increment the session epoch nonce to prevent review replay attacks across fiscal quarters.
-
-### 3. Explorer State Inspection (`/explorer`)
-1. Inspect the on-chain contract address: `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa`.
-2. Inspect the 8 ledger fields in real-time.
-3. Access direct links to the official Midnight Preview Explorer.
+Open [http://localhost:3000](http://localhost:3000) in your browser to interact with the dApp.
 
 ---
 
@@ -259,7 +203,7 @@ All private witnesses execute strictly on the client device and are never broadc
 
 ## Platform Screenshots
 
-### 1. Main Dashboard & ZK Contract Architecture
+### 1. Main Dashboard & 3D Holographic Review Pass
 ![ABF Main Dashboard](photos/dashboard_home.png)
 
 ### 2. Anonymous Buyer Feedback & ZK Proof Portal
@@ -274,7 +218,7 @@ All private witnesses execute strictly on the client device and are never broadc
 ### 5. Mobile Responsive UI & Lace Wallet Connector
 ![Mobile Responsive UI](photos/mobile-ui-dashboard.png)
 
-### 6. Vitest Unit Test Suite — 10/10 Tests Passing
+### 6. Vitest Unit Test Suite — 35/35 Tests Passing
 ![Test Suite](photos/test-run-pass.png)
 
 ---
@@ -301,13 +245,15 @@ Anonymous-Buyer-Feedback/
 │   │   ├── ClientLayout.tsx                 # Wallet provider & app state wrapper
 │   │   ├── globals.css                      # Glassmorphic dark design system & tokens
 │   │   ├── layout.tsx                       # Root layout & typography
-│   │   └── page.tsx                         # Main landing dashboard & contract banner
+│   │   └── page.tsx                         # Main landing dashboard & review showcase
 │   ├── components/
-│   │   └── Navbar.tsx                       # Responsive header with Lace wallet status
+│   │   ├── Navbar.tsx                       # Responsive header with Lace wallet status
+│   │   └── WalletConnectModal.tsx           # Multi-wallet connection modal (Lace & 1AM)
 │   └── lib/
 │       └── contract.ts                      # Midnight.js SDK client & circuit callers
 ├── tests/
-│   └── counter.test.ts                      # 10 Vitest contract & witness unit tests
+│   ├── counter.test.ts                      # 10 Vitest contract & witness unit tests
+│   └── anonymous_buyer_feedback.test.ts     # 25 Vitest client SDK & circuit unit tests
 ├── .github/workflows/ci.yml                 # Automated CI test & build pipeline
 ├── next.config.js                           # Next.js 14 configuration
 ├── package.json                             # Dependencies & build scripts
@@ -319,9 +265,9 @@ Anonymous-Buyer-Feedback/
 
 ---
 
-## Testing & Verification
+## Testing & Verification (35/35 Tests Passing)
 
-The repository includes comprehensive automated tests covering circuit exports, witness definitions, private key isolation, and bounds checks.
+The repository includes comprehensive automated tests covering circuit exports, witness definitions, private key isolation, bounds checks, and SDK execution.
 
 Run tests:
 ```bash
@@ -339,6 +285,7 @@ Test Suite Details:
 - **Ledger Schema**: 8-field state schema validation.
 - **Fail Case Validation**: Ratings outside 1–5 fail circuit assertions.
 - **Session Epoch Isolation**: Proofs generated under different sessions yield distinct nonce contexts.
+- **Client SDK Invocations**: Full unit coverage for `submitFeedback`, `verifyFeedback`, `flagFeedback`, `setMerchantCommitment`, `resetMerchantProduct`, and `incrementSession`.
 
 ---
 

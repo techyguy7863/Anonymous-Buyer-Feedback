@@ -1,4 +1,4 @@
-# Project Proposal: Anonymous Buyer Feedback (ABF)
+﻿# Project Proposal: Anonymous Buyer Feedback (ABF)
 > A Privacy-Preserving Zero-Knowledge Consumer Product & Merchant Review Platform on the Midnight Network
 
 ---
@@ -53,21 +53,21 @@ ABF leverages Midnight's dual-state hybrid architecture, combining private off-c
 - **`incrementSession()`**: Increments the active session counter to prevent review replay attacks across catalog updates.
 
 ### 3. Public Ledger State (8 Fields)
-- `feedbackCount: Counter` — Total verified buyer review commitments.
-- `flaggedCount: Counter` — Total flagged / disputed review claims.
-- `activeSession: Counter` — Epoch nonce for replay attack prevention.
-- `merchantId: Bytes<32>` — Active merchant catalog identifier.
-- `merchantCommitment: Bytes<32>` — Public authority anchor derived from merchant key.
-- `lastFeedbackCommitment: Bytes<32>` — Most recent ZK review claim commitment hash.
-- `lastFlaggedCommitment: Bytes<32>` — Most recent flagged review hash.
-- `minimumRatingThreshold: Uint<32>` — Minimum published rating criteria (1-5).
+- `feedbackCount: Counter` â€” Total verified buyer review commitments.
+- `flaggedCount: Counter` â€” Total flagged / disputed review claims.
+- `activeSession: Counter` â€” Epoch nonce for replay attack prevention.
+- `merchantId: Bytes<32>` â€” Active merchant catalog identifier.
+- `merchantCommitment: Bytes<32>` â€” Public authority anchor derived from merchant key.
+- `lastFeedbackCommitment: Bytes<32>` â€” Most recent ZK review claim commitment hash.
+- `lastFlaggedCommitment: Bytes<32>` â€” Most recent flagged review hash.
+- `minimumRatingThreshold: Uint<32>` â€” Minimum published rating criteria (1-5).
 
 ### 4. Private Witnesses (5 Witnesses)
-- `buyerSecretKey(): Bytes<32>` — Buyer private secret key (never leaves local browser).
-- `orderInvoiceHash(): Bytes<32>` — SHA-256 hash of purchase invoice / order receipt.
-- `ratingScore(): Uint<32>` — Private rating value (1-5) verified in ZK circuit bounds.
-- `feedbackProofNonce(): Bytes<32>` — Cryptographic salt for commitment hiding.
-- `merchantSigningKey(): Bytes<32>` — Merchant private key for authorized management.
+- `buyerSecretKey(): Bytes<32>` â€” Buyer private secret key (never leaves local browser).
+- `orderInvoiceHash(): Bytes<32>` â€” SHA-256 hash of purchase invoice / order receipt.
+- `ratingScore(): Uint<32>` â€” Private rating value (1-5) verified in ZK circuit bounds.
+- `feedbackProofNonce(): Bytes<32>` â€” Cryptographic salt for commitment hiding.
+- `merchantSigningKey(): Bytes<32>` â€” Merchant private key for authorized management.
 
 ---
 
@@ -90,7 +90,7 @@ ABF leverages Midnight's dual-state hybrid architecture, combining private off-c
 
 ## Deployment & Infrastructure
 
-- **Contract Address**: `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa` — **CONFIRMED**
+- **Contract Address**: `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa` â€” **CONFIRMED**
 - **Midnight Explorer**: [https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa](https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa)
 - **GitHub Repository**: [https://github.com/techyguy7863/Anonymous-Buyer-Feedback](https://github.com/techyguy7863/Anonymous-Buyer-Feedback)
 - **Live Vercel Demo**: [https://anonymous-buyer-feedback-eta.vercel.app/](https://anonymous-buyer-feedback-eta.vercel.app/)
@@ -107,7 +107,8 @@ ABF leverages Midnight's dual-state hybrid architecture, combining private off-c
 - [x] **Substantive 4-Question Response**: Thorough answers detailing real-world problem, ZK architecture, witnesses, and privacy models.
 - [x] **Midnight.js SDK Integration**: `@midnight-ntwrk/midnight-js-network-provider`, `@midnight-ntwrk/dapp-connector-api`, `@midnight-ntwrk/compact-runtime` wired into client.
 - [x] **Enriched Compact Contract**: 6 circuits, 8 ledger fields, 5 private witnesses.
-- [x] **100% Passing Test Suite**: 10/10 Vitest unit tests covering circuit execution and witness privacy.
-- [x] **Next.js 14 Web dApp**: Full interactive UI with feedback submission, merchant console, and Midnight Lace wallet connection.
+- [x] **100% Passing Test Suite**: 35/35 Vitest unit tests covering contract circuits, client SDK methods, and witness privacy.
+- [x] **Next.js 14 Web dApp**: Executive luxury UI overhaul with 3D buyer pass, interactive star ratings, feedback submission, merchant console, and Midnight Lace wallet connection.
 - [x] **Live On-Chain Deployment**: Deployed on Midnight Preview at `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa`.
 - [x] **YouTube Live Demo Walkthrough**: [https://youtu.be/I7ErnLLc348](https://youtu.be/I7ErnLLc348).
+

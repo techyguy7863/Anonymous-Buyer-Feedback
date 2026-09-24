@@ -5,9 +5,9 @@
 
 ## Live Demo Video
 
-[![ABF Video Walkthrough](https://img.shields.io/badge/YouTube-Watch%20Live%20Demo%20Video-FF0000?style=for-the-badge&logo=youtube)](https://youtu.be/I7ErnLLc348)
+[![ABF Video Walkthrough](https://img.shields.io/badge/YouTube-Watch%20Live%20Demo%20Video-FF0000?style=for-the-badge&logo=youtube)](https://youtu.be/_bLKPsTYPP0)
 
-**Watch on YouTube**: [https://youtu.be/I7ErnLLc348](https://youtu.be/I7ErnLLc348)
+**Watch on YouTube**: [https://youtu.be/_bLKPsTYPP0](https://youtu.be/_bLKPsTYPP0)
 
 ---
 
@@ -94,7 +94,7 @@ ABF leverages Midnight's dual-state hybrid architecture, combining private off-c
 - **Midnight Explorer**: [https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa](https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa)
 - **GitHub Repository**: [https://github.com/techyguy7863/Anonymous-Buyer-Feedback](https://github.com/techyguy7863/Anonymous-Buyer-Feedback)
 - **Live Vercel Demo**: [https://anonymous-buyer-feedback-eta.vercel.app/](https://anonymous-buyer-feedback-eta.vercel.app/)
-- **YouTube Demo Video**: [https://youtu.be/I7ErnLLc348](https://youtu.be/I7ErnLLc348)
+- **YouTube Demo Video**: [https://youtu.be/_bLKPsTYPP0](https://youtu.be/_bLKPsTYPP0)
 - **Network**: Midnight Preview Testnet
 - **Preview RPC**: `https://rpc.preview.midnight.network`
 - **Preview Indexer**: `https://indexer.preview.midnight.network/api/v4/graphql`
@@ -110,5 +110,5 @@ ABF leverages Midnight's dual-state hybrid architecture, combining private off-c
 - [x] **100% Passing Test Suite**: 35/35 Vitest unit tests covering contract circuits, client SDK methods, and witness privacy.
 - [x] **Next.js 14 Web dApp**: Executive luxury UI overhaul with 3D buyer pass, interactive star ratings, feedback submission, merchant console, and Midnight Lace wallet connection.
 - [x] **Live On-Chain Deployment**: Deployed on Midnight Preview at `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa`.
-- [x] **YouTube Live Demo Walkthrough**: [https://youtu.be/I7ErnLLc348](https://youtu.be/I7ErnLLc348).
+- [x] **YouTube Live Demo Walkthrough**: [https://youtu.be/_bLKPsTYPP0](https://youtu.be/_bLKPsTYPP0).
 

@@ -3,7 +3,7 @@
 > A decentralized, privacy-preserving zero-knowledge consumer product and merchant review/feedback dApp built on the Midnight Network using Compact v0.23 smart contracts and Midnight.js SDK.
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Anonymous--Buyer--Feedback-181717?style=flat-square&logo=github)](https://github.com/techyguy7863/Anonymous-Buyer-Feedback)
-[![YouTube Demo](https://img.shields.io/badge/YouTube-Live_Demo_Video-FF0000?style=flat-square&logo=youtube)](https://youtu.be/I7ErnLLc348)
+[![YouTube Demo](https://img.shields.io/badge/YouTube-Live_Demo_Video-FF0000?style=flat-square&logo=youtube)](https://youtu.be/_bLKPsTYPP0)
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live_Demo-000000?style=flat-square&logo=vercel)](https://anonymous-buyer-feedback-eta.vercel.app/)
 [![CI/CD Pipeline](https://github.com/techyguy7863/Anonymous-Buyer-Feedback/actions/workflows/ci.yml/badge.svg)](https://github.com/techyguy7863/Anonymous-Buyer-Feedback/actions/workflows/ci.yml)
 [![Midnight Network](https://img.shields.io/badge/Network-Midnight_Preview-8b5cf6?style=flat-square)](https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa)
@@ -90,7 +90,7 @@ In response to reviewer feedback (**"work on the UI"**), the dApp interface has 
 |---|---|
 | **GitHub Repository** | [https://github.com/techyguy7863/Anonymous-Buyer-Feedback](https://github.com/techyguy7863/Anonymous-Buyer-Feedback) |
 | **Live Web dApp** | [https://anonymous-buyer-feedback-eta.vercel.app/](https://anonymous-buyer-feedback-eta.vercel.app/) |
-| **YouTube Video Demo** | [https://youtu.be/I7ErnLLc348](https://youtu.be/I7ErnLLc348) |
+| **YouTube Video Demo** | [https://youtu.be/_bLKPsTYPP0](https://youtu.be/_bLKPsTYPP0) |
 | **Contract Address** | `0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa` |
 | **Midnight Explorer** | [View on Midnight Explorer](https://preview.midnightexplorer.com/contracts/0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa) |
 | **Target Network** | Midnight Preview Testnet |
@@ -103,9 +103,9 @@ In response to reviewer feedback (**"work on the UI"**), the dApp interface has 
 
 ## Video Walkthrough
 
-[![ABF Video Walkthrough](https://img.shields.io/badge/YouTube-Watch%20Live%20Demo%20Video-FF0000?style=for-the-badge&logo=youtube)](https://youtu.be/I7ErnLLc348)
+[![ABF Video Walkthrough](https://img.shields.io/badge/YouTube-Watch%20Live%20Demo%20Video-FF0000?style=for-the-badge&logo=youtube)](https://youtu.be/_bLKPsTYPP0)
 
-Direct link: [https://youtu.be/I7ErnLLc348](https://youtu.be/I7ErnLLc348)
+Direct link: [https://youtu.be/_bLKPsTYPP0](https://youtu.be/_bLKPsTYPP0)
 
 ---
 
@@ -204,22 +204,22 @@ All private witnesses execute strictly on the client device and are never broadc
 ## Platform Screenshots
 
 ### 1. Main Dashboard & 3D Holographic Review Pass
-![ABF Main Dashboard](photos/dashboard_home.png)
+![ABF Main Dashboard](photos/main_dashbaord.png)
 
 ### 2. Anonymous Buyer Feedback & ZK Proof Portal
-![Submit Feedback Portal](photos/submit-feedback-dashboard.png)
+![Submit Feedback Portal](photos/submission_portal.png)
 
 ### 3. Merchant Admin Console & Moderation
-![Merchant Admin Console](photos/admin_console.png)
+![Merchant Admin Console](photos/admin_console_main.png)
 
 ### 4. Midnight On-Chain Contract Explorer
-![Contract Explorer](photos/contract_explorer.png)
+![Contract Explorer](photos/contract-explore.png)
 
 ### 5. Mobile Responsive UI & Lace Wallet Connector
-![Mobile Responsive UI](photos/mobile-ui-dashboard.png)
+![Mobile Responsive UI](photos/mobile_ui_main.png)
 
 ### 6. Vitest Unit Test Suite — 35/35 Tests Passing
-![Test Suite](photos/test-run-pass.png)
+![Test Suite](photos/test_run.png)
 
 ---
 

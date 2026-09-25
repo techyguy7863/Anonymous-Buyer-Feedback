@@ -11,25 +11,8 @@ import { setNetworkId, getNetworkId } from "@midnight-ntwrk/midnight-js-network-
 import type { MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
 import { Contract, ledger, type Ledger, type Witnesses } from "../../managed/contract/index.js";
 
-export const CONTRACT_ADDRESS = "0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa";
-
-export interface NetworkConfiguration {
-  networkId: string;
-  indexerUrl: string;
-  nodeUrl: string;
-  faucetUrl: string;
-  proofServerUrl: string;
-  explorerUrl: string;
-}
-
-export const NETWORK_CONFIG: NetworkConfiguration = {
-  networkId: "preview",
-  indexerUrl: "https://indexer.preview.midnight.network/api/v4/graphql",
-  nodeUrl: "https://rpc.preview.midnight.network",
-  faucetUrl: "https://faucet.preview.midnight.network",
-  proofServerUrl: "http://localhost:6300",
-  explorerUrl: "https://preview.midnightexplorer.com/contracts/" + CONTRACT_ADDRESS,
-};
+import { CONTRACT_ADDRESS, NETWORK_CONFIG, type NetworkConfiguration } from "./constants";
+export { CONTRACT_ADDRESS, NETWORK_CONFIG, type NetworkConfiguration };
 
 // Initialize global network identifier via Midnight.js SDK
 try {

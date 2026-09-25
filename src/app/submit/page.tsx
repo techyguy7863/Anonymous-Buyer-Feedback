@@ -1,6 +1,7 @@
 ﻿"use client";
+
 import React, { useState } from "react";
-import { getClient, NETWORK_CONFIG } from "../../lib/contract";
+import { getClient, NETWORK_CONFIG } from "@/lib/contract";
 import Link from "next/link";
 
 export default function SubmitFeedbackPage() {
@@ -17,16 +18,25 @@ export default function SubmitFeedbackPage() {
   const [verifyResult, setVerifyResult] = useState<any>(null);
   const [claimedCommitment, setClaimedCommitment] = useState("");
   const [logs, setLogs] = useState<{ msg: string; type: string }[]>([]);
+  const [copiedCommitment, setCopiedCommitment] = useState(false);
   const [copiedTx, setCopiedTx] = useState(false);
 
   const addLog = (msg: string, type = "info") => setLogs((l) => [...l, { msg, type }]);
 
-  const ratingSentiments: Record<number, { text: string; color: string; badge: string }> = {
-    5: { text: "Exceptional Quality (5/5)", color: "#10b981", badge: "badge-emerald" },
-    4: { text: "Highly Recommended (4/5)", color: "#06b6d4", badge: "badge-cyan" },
-    3: { text: "Satisfactory Purchase (3/5)", color: "#f59e0b", badge: "badge-gold" },
-    2: { text: "Below Expectations (2/5)", color: "#f97316", badge: "badge-gold" },
-    1: { text: "Significant Issues (1/5)", color: "#ef4444", badge: "badge-rose" },
+  const ratingSentiments: Record<number, string> = {
+    5: "Exceptional Quality (5/5)",
+    4: "Highly Recommended (4/5)",
+    3: "Satisfactory Purchase (3/5)",
+    2: "Below Expectations (2/5)",
+    1: "Significant Issues (1/5)",
+  };
+
+  const handleGenerateKey = () => {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    const key = "buyer_key_" + Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+    setBuyerSecretKey(key);
+    addLog(`> [ENTROPY] Generated 256-bit buyer secret key: ${key.slice(0, 18)}...`, "info");
   };
 
   const handleApplyPreset = (preset: "iphone" | "sony" | "dell") => {
@@ -59,13 +69,13 @@ export default function SubmitFeedbackPage() {
     setVerifyResult(null);
 
     try {
-      addLog("> [WALLET] Connecting to Midnight Lace Wallet session via DApp Connector...", "info");
-      addLog(`> [NETWORK] Binding to Midnight Preview Network (${NETWORK_CONFIG.networkId})`, "info");
-      addLog(`> [ZK WITNESS 1/4] buyerSecretKey() — confidential buyer private key loaded into client memory`, "info");
-      addLog(`> [ZK WITNESS 2/4] orderInvoiceHash() — blind SHA-256 digest of purchase receipt computed`, "info");
-      addLog(`> [ZK WITNESS 3/4] ratingScore() = ${ratingScore} Stars (circuit asserts 1 <= rating <= 5)...`, "info");
-      addLog(`> [ZK WITNESS 4/4] feedbackProofNonce() — cryptographic salt generated via Web Crypto API`, "info");
-      addLog(`> [SNARK PROVER] Compiling Compact v0.23 circuit: submitFeedback(Bytes<32>)...`, "info");
+      addLog("> [WALLET] Connecting to Midnight Lace Wallet via DApp Connector...", "info");
+      addLog(`> [NETWORK] Target Network: Midnight Preview (${NETWORK_CONFIG.networkId})`, "info");
+      addLog("> [ZK WITNESS 1/4] buyerSecretKey() - Confidential buyer key loaded in memory enclave", "info");
+      addLog("> [ZK WITNESS 2/4] orderInvoiceHash() - SHA-256 digest of purchase receipt computed locally", "info");
+      addLog(`> [ZK WITNESS 3/4] ratingScore() = ${ratingScore} Stars (circuit asserts 1 <= rating <= 5)`, "info");
+      addLog("> [ZK WITNESS 4/4] feedbackProofNonce() - Cryptographic salt generated via Web Crypto API", "info");
+      addLog("> [CIRCUIT] Compiling Compact v0.23 circuit: submitFeedback(Bytes<32>)...", "info");
 
       const client = getClient();
       client.setBuyerKey(buyerSecretKey || "sample_buyer_secret_key");
@@ -76,11 +86,11 @@ export default function SubmitFeedbackPage() {
 
       setResult(res);
       setClaimedCommitment(res.commitmentHex);
-      addLog(`> [CONFIRMED ✓] ZK Buyer Feedback commitment successfully anchored on-chain!`, "success");
-      addLog(`> [COMMITMENT HASH] ${res.commitmentHex}`, "success");
+      addLog("> [SUCCESS] ZK Buyer Feedback commitment anchored on-chain!", "success");
+      addLog(`> [COMMITMENT] ${res.commitmentHex}`, "success");
       addLog(`> [TX HASH] ${res.txHash}`, "success");
-      addLog(`> [FEE] Transaction fee: ${res.txFee} ${res.txFeeAsset} settled on Midnight Preview`, "info");
-      addLog(`> [PRIVACY VERIFIED] 0 bytes of invoice, customer name, or payment details leaked to block validators`, "success");
+      addLog(`> [FEE] ${res.txFee} ${res.txFeeAsset} settled on Midnight Preview`, "info");
+      addLog("> [VERIFIED] Zero personal identity or transaction receipts disclosed to validators.", "success");
     } catch (err: any) {
       addLog(`> [ERROR] ${err?.message || err}`, "error");
     } finally {
@@ -92,608 +102,407 @@ export default function SubmitFeedbackPage() {
     e.preventDefault();
     if (!claimedCommitment) return;
     setVerifyLoading(true);
+    setVerifyResult(null);
     try {
-      addLog(`> [CIRCUIT] Executing verifyFeedback(Bytes<32>) for commitment hash...`, "info");
+      addLog(`> [CIRCUIT] Invoking verifyFeedback(Bytes<32>) for commitment...`, "info");
       const client = getClient();
       const res = await client.verifyFeedback(claimedCommitment);
       setVerifyResult(res);
       if (res.matches) {
-        addLog(`> [VERIFIED ✓] On-chain proof verification SUCCESSFUL — authentic buyer review confirmed!`, "success");
+        addLog("> [VERIFIED] On-chain proof verification SUCCESSFUL - authentic buyer review confirmed!", "success");
+        addLog(`> [TX HASH] ${res.txHash}`, "success");
       } else {
-        addLog(`> [MISMATCH ✕] Commitment does not match on-chain ledger records or was flagged.`, "error");
+        addLog("> [FAILED] Commitment does not match on-chain ledger records or was flagged.", "error");
       }
     } catch (err: any) {
-      addLog(`> [VERIFY ERROR] ${err?.message || err}`, "error");
+      addLog(`> [ERROR] ${err?.message || err}`, "error");
     } finally {
       setVerifyLoading(false);
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyText = (text: string, isCommitment = false) => {
     navigator.clipboard.writeText(text);
-    setCopiedTx(true);
-    setTimeout(() => setCopiedTx(false), 2000);
+    if (isCommitment) {
+      setCopiedCommitment(true);
+      setTimeout(() => setCopiedCommitment(false), 2000);
+    } else {
+      setCopiedTx(true);
+      setTimeout(() => setCopiedTx(false), 2000);
+    }
   };
 
-  return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "2.5rem 1.5rem 5rem" }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-        <div style={{ display: "inline-flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
-          <span className="badge badge-emerald">Client Prover (ZK)</span>
-          <span className="badge badge-cyan">Midnight Preview Network</span>
-          <span className="badge badge-purple">Compact v0.23</span>
-        </div>
-        <h1 style={{ fontSize: "clamp(2rem, 4vw, 2.75rem)", fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
-          Anonymous Feedback Submission Portal
-        </h1>
-        <p style={{ color: "#94a3b8", fontSize: "1rem", maxWidth: "640px", margin: "0.5rem auto 0" }}>
-          Prove authentic product purchase and submit verified star ratings in zero-knowledge. Your invoice receipt, payment method, and personal identity remain 100% private.
-        </p>
+  const F: React.CSSProperties = { marginBottom: "1.25rem" };
 
-        {/* Navigation Tabs */}
-        <div
-          style={{
-            display: "inline-flex",
-            background: "rgba(15, 23, 42, 0.8)",
-            padding: "0.35rem",
-            borderRadius: "50px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            marginTop: "1.75rem",
-            gap: "0.35rem",
-          }}
-        >
-          <button
-            onClick={() => setActiveTab("submit")}
-            style={{
-              padding: "0.6rem 1.75rem",
-              borderRadius: "50px",
-              fontSize: "0.88rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              border: "none",
-              transition: "all 0.25s ease",
-              background: activeTab === "submit" ? "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)" : "transparent",
-              color: activeTab === "submit" ? "#030712" : "#94a3b8",
-              boxShadow: activeTab === "submit" ? "0 4px 15px rgba(16, 185, 129, 0.4)" : "none",
-            }}
-          >
-            ⚡ Submit Verified Review
-          </button>
-          <button
-            onClick={() => setActiveTab("verify")}
-            style={{
-              padding: "0.6rem 1.75rem",
-              borderRadius: "50px",
-              fontSize: "0.88rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              border: "none",
-              transition: "all 0.25s ease",
-              background: activeTab === "verify" ? "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)" : "transparent",
-              color: activeTab === "verify" ? "#ffffff" : "#94a3b8",
-              boxShadow: activeTab === "verify" ? "0 4px 15px rgba(6, 182, 212, 0.4)" : "none",
-            }}
-          >
-            🛡️ On-Chain Proof Verifier
-          </button>
+  return (
+    <div>
+      {/* PAGE HEADER */}
+      <div style={{ padding: "3rem 5rem 2rem", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
+          <div>
+            <span className="badge" style={{ marginBottom: "0.75rem" }}>ZK CIRCUITS 1 & 2</span>
+            <h1 className="section-title">Submit Anonymous<br />Buyer Feedback</h1>
+            <p className="section-desc" style={{ maxWidth: 580 }}>
+              Generate client-side zero-knowledge proofs locally in your browser. Assert authentic purchase and star ratings without revealing personal credentials.
+            </p>
+          </div>
+          {/* TAB BUTTONS */}
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              onClick={() => setActiveTab("submit")}
+              className={activeTab === "submit" ? "btn-primary" : "btn-outline"}
+              style={{ padding: "0.55rem 1.15rem", fontSize: "0.85rem" }}
+            >
+              Submit Feedback
+            </button>
+            <button
+              onClick={() => setActiveTab("verify")}
+              className={activeTab === "verify" ? "btn-primary" : "btn-outline"}
+              style={{ padding: "0.55rem 1.15rem", fontSize: "0.85rem" }}
+            >
+              Audit Commitment
+            </button>
+          </div>
         </div>
       </div>
 
-      {activeTab === "submit" ? (
-        <>
-          {/* Presets Bar */}
-          <div
-            className="glass-card"
-            style={{
-              padding: "1rem 1.5rem",
-              marginBottom: "1.75rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "0.75rem",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "1.1rem" }}>⚡</span>
-              <span style={{ fontSize: "0.85rem", color: "#cbd5e1", fontWeight: 600 }}>
-                Quick-Fill Test Credentials:
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <button
-                onClick={() => handleApplyPreset("iphone")}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  borderRadius: "6px",
-                  background: "rgba(16, 185, 129, 0.15)",
-                  color: "#34d399",
-                  border: "1px solid rgba(16, 185, 129, 0.3)",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                iPhone 16 Order (5★)
-              </button>
-              <button
-                onClick={() => handleApplyPreset("sony")}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  borderRadius: "6px",
-                  background: "rgba(6, 182, 212, 0.15)",
-                  color: "#06b6d4",
-                  border: "1px solid rgba(6, 182, 212, 0.3)",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Sony Headphones (5★)
-              </button>
-              <button
-                onClick={() => handleApplyPreset("dell")}
-                style={{
-                  padding: "0.35rem 0.85rem",
-                  borderRadius: "6px",
-                  background: "rgba(192, 132, 252, 0.15)",
-                  color: "#c084fc",
-                  border: "1px solid rgba(192, 132, 252, 0.3)",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Dell Laptop (4★)
-              </button>
-            </div>
-          </div>
-
-          {/* Main Submission Form */}
-          <div
-            className="glass-card"
-            style={{
-              padding: "2.25rem",
-              marginBottom: "2rem",
-              border: "1px solid rgba(16, 185, 129, 0.3)",
-              boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.5)",
-            }}
-          >
-            <form onSubmit={handleSubmitFeedback} style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
-              {/* Interactive Star Rating Selector */}
-              <div
-                style={{
-                  background: "rgba(0, 0, 0, 0.35)",
-                  padding: "1.5rem",
-                  borderRadius: "14px",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  textAlign: "center",
-                }}
-              >
-                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#cbd5e1", marginBottom: "0.75rem" }}>
-                  Product Rating Score (Enforced in ZK: 1 &le; rating &le; 5) *
-                </label>
-
-                <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      className="star-btn"
-                      onClick={() => setRatingScore(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      style={{
-                        color: star <= (hoverRating || ratingScore) ? "#fbbf24" : "#334155",
-                      }}
-                    >
-                      ★
-                    </button>
-                  ))}
+      {/* 2-COLUMN WORKSPACE */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "calc(100vh - 220px)" }}>
+        {/* LEFT COLUMN: INTERACTIVE FORMS */}
+        <div style={{ padding: "3rem 2.5rem 3rem 5rem", borderRight: "1px solid var(--border)" }}>
+          {activeTab === "submit" ? (
+            <>
+              {/* PRESETS BAR */}
+              <div style={{ marginBottom: "1.75rem", padding: "1rem 1.25rem", background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
+                <div style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--fg-3)", marginBottom: "0.6rem" }}>
+                  Quick-Fill Test Credentials
                 </div>
-
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
-                  <span
-                    className={`badge ${ratingSentiments[ratingScore].badge}`}
-                    style={{ fontSize: "0.78rem", padding: "0.3rem 0.85rem" }}
-                  >
-                    {ratingSentiments[ratingScore].text}
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
-                    • Enforced via Compact SNARK Assertion
-                  </span>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => handleApplyPreset("iphone")} className="btn-outline" style={{ fontSize: "0.75rem", padding: "0.35rem 0.75rem" }}>
+                    iPhone 16 Pro (5 Stars)
+                  </button>
+                  <button type="button" onClick={() => handleApplyPreset("sony")} className="btn-outline" style={{ fontSize: "0.75rem", padding: "0.35rem 0.75rem" }}>
+                    Sony XM5 (5 Stars)
+                  </button>
+                  <button type="button" onClick={() => handleApplyPreset("dell")} className="btn-outline" style={{ fontSize: "0.75rem", padding: "0.35rem 0.75rem" }}>
+                    Dell XPS 15 (4 Stars)
+                  </button>
                 </div>
               </div>
 
-              {/* Form Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e2e8f0", marginBottom: "0.5rem" }}>
-                    Merchant Identifier (Public Input) *
-                  </label>
+              {/* MAIN FORM */}
+              <form onSubmit={handleSubmitFeedback}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "1.5rem" }}>
+                  Step 1 — Feedback & Private Witnesses
+                </h2>
+
+                <div style={F}>
+                  <label className="label">Target Merchant ID (Public Input)</label>
                   <input
-                    type="text"
-                    id="merchantId"
+                    className="input"
                     value={merchantId}
                     onChange={(e) => setMerchantId(e.target.value)}
-                    placeholder="merchant_apple_store_us"
+                    placeholder="e.g. merchant_apple_store_us"
                     required
                   />
-                  <p style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "0.4rem" }}>
-                    Anchors feedback to the registered merchant catalog on Midnight.
-                  </p>
+                  <div style={{ fontSize: "0.72rem", color: "var(--fg-4)", marginTop: "0.3rem" }}>
+                    Public identifier registered in the on-chain catalog
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e2e8f0", marginBottom: "0.5rem" }}>
-                    Buyer Secret Key (Private Witness 🔒)
-                  </label>
+                <div style={F}>
+                  <label className="label">Buyer Secret Key (Private Witness)</label>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <input
+                      className="input"
+                      value={buyerSecretKey}
+                      onChange={(e) => setBuyerSecretKey(e.target.value)}
+                      placeholder="Enter buyer private key or generate entropy"
+                      style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateKey}
+                      className="btn-outline"
+                      style={{ whiteSpace: "nowrap", padding: "0.55rem 0.9rem", fontSize: "0.78rem" }}
+                    >
+                      Generate
+                    </button>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--fg-4)", marginTop: "0.3rem" }}>
+                    Compiled into buyerSecretKey() witness — never leaves device memory
+                  </div>
+                </div>
+
+                <div style={F}>
+                  <label className="label">Order Invoice / Receipt Digest (Blind Witness)</label>
                   <input
-                    type="password"
-                    id="buyerSecretKey"
-                    value={buyerSecretKey}
-                    onChange={(e) => setBuyerSecretKey(e.target.value)}
-                    placeholder="Confidential buyer key (never leaves device)"
-                    autoComplete="off"
+                    className="input"
+                    value={orderInvoice}
+                    onChange={(e) => setOrderInvoice(e.target.value)}
+                    placeholder="e.g. INV-2026-APPL-9812401824 or raw receipt payload"
                   />
-                  <p style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "0.4rem" }}>
-                    Compiles into <code>buyerSecretKey()</code> witness — kept strictly in client memory.
-                  </p>
+                  <div style={{ fontSize: "0.72rem", color: "var(--fg-4)", marginTop: "0.3rem" }}>
+                    Hashed locally via SHA-256 into orderInvoiceHash(). Zero receipt items transmitted.
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e2e8f0", marginBottom: "0.5rem" }}>
-                  Order Invoice / Purchase Receipt (Blind Witness 🔒)
-                </label>
-                <input
-                  type="text"
-                  id="orderInvoice"
-                  value={orderInvoice}
-                  onChange={(e) => setOrderInvoice(e.target.value)}
-                  placeholder="e.g. INV-2026-APPL-9812401824 or raw receipt payload"
-                />
-                <p style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "0.4rem" }}>
-                  Hashed locally via SHA-256 into <code>orderInvoiceHash()</code>. Zero receipt items or credit cards are transmitted.
-                </p>
-              </div>
+                {/* STAR RATING */}
+                <div style={F}>
+                  <label className="label">Product Rating (Enforced in ZK: 1 &le; rating &le; 5)</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "var(--card)", padding: "0.85rem 1.25rem", border: "1.5px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
+                    <div style={{ display: "flex", gap: "0.35rem" }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRatingScore(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            fontSize: "1.4rem",
+                            cursor: "pointer",
+                            color: star <= (hoverRating || ratingScore) ? "var(--fg)" : "var(--border-2)",
+                            padding: "0 0.15rem",
+                            transition: "color 0.1s",
+                          }}
+                        >
+                          &#9733;
+                        </button>
+                      ))}
+                    </div>
+                    <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--fg)" }}>
+                      {ratingSentiments[ratingScore]}
+                    </span>
+                  </div>
+                </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e2e8f0", marginBottom: "0.5rem" }}>
-                  Anonymous Review Comments (Optional Public Feedback)
-                </label>
-                <textarea
-                  id="reviewComments"
-                  value={reviewComments}
-                  onChange={(e) => setReviewComments(e.target.value)}
-                  placeholder="Share your anonymous product review notes..."
-                  rows={3}
-                  style={{ resize: "vertical" }}
-                />
-              </div>
+                <div style={F}>
+                  <label className="label">Anonymous Review Comments (Optional)</label>
+                  <textarea
+                    className="input"
+                    rows={3}
+                    value={reviewComments}
+                    onChange={(e) => setReviewComments(e.target.value)}
+                    placeholder="Share honest feedback about the product quality..."
+                    style={{ resize: "vertical" }}
+                  />
+                </div>
 
-              {/* Submit Buttons */}
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
                 <button
                   type="submit"
                   className="btn-primary"
                   disabled={loading}
-                  id="submitBtn"
-                  style={{ padding: "0.85rem 2.25rem", fontSize: "0.95rem" }}
+                  style={{ width: "100%", justifyContent: "center", padding: "0.75rem", fontSize: "0.9rem", marginTop: "0.5rem" }}
                 >
                   {loading ? (
                     <>
                       <span className="spinner" /> Generating ZK SNARK Proof...
                     </>
                   ) : (
-                    "💎 Generate Proof & Publish Feedback"
+                    "Generate ZK Proof & Anchor Feedback"
                   )}
                 </button>
-                <Link href="/" className="btn-secondary" style={{ padding: "0.85rem 1.5rem" }}>
-                  ← Dashboard
-                </Link>
+              </form>
+            </>
+          ) : (
+            /* TAB 2: AUDIT COMMITMENT */
+            <div>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "1.25rem" }}>
+                Step 2 — Verify On-Chain Commitment
+              </h2>
+              <p style={{ fontSize: "0.85rem", color: "var(--fg-3)", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+                Audit whether a given 32-byte review commitment hash is registered and authentic on the Midnight Preview ledger.
+              </p>
+
+              <form onSubmit={handleVerifyCommitment}>
+                <div style={F}>
+                  <label className="label">Review Commitment Hash</label>
+                  <input
+                    className="input"
+                    value={claimedCommitment}
+                    onChange={(e) => setClaimedCommitment(e.target.value)}
+                    placeholder="0x... or 32-byte hexadecimal review commitment hash"
+                    style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem" }}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom: "1.25rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => setClaimedCommitment("0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa")}
+                    style={{ background: "none", border: "none", color: "var(--fg-3)", textDecoration: "underline", cursor: "pointer", fontSize: "0.75rem", padding: 0 }}
+                  >
+                    Load Genesis Contract Commitment
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={verifyLoading}
+                  style={{ width: "100%", justifyContent: "center", padding: "0.75rem", fontSize: "0.9rem" }}
+                >
+                  {verifyLoading ? "Auditing On-Chain Ledger..." : "Verify Commitment On-Chain"}
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: ZK CIRCUIT LOGS & TELEMETRY */}
+        <div style={{ padding: "3rem 5rem 3rem 2.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* TERMINAL */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+              <div style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-3)" }}>
+                ZK Prover & Network Telemetry
               </div>
-            </form>
+              {logs.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setLogs([])}
+                  style={{ background: "none", border: "none", color: "var(--fg-4)", fontSize: "0.72rem", cursor: "pointer" }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="terminal" style={{ minHeight: 200 }}>
+              {logs.length === 0 ? (
+                <span style={{ color: "var(--fg-4)" }}>$ waiting for ZK circuit invocation...</span>
+              ) : (
+                logs.map((l, i) => (
+                  <div key={i} className={`log-${l.type}`}>
+                    {l.msg}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          {/* Success Result: Digital Verification Certificate */}
+          {/* SUBMISSION RESULT CARD */}
           {result && (
-            <div
-              className="glass-card"
-              style={{
-                padding: "2.25rem",
-                marginBottom: "2rem",
-                border: "1.5px solid rgba(16, 185, 129, 0.4)",
-                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)",
-                boxShadow: "0 20px 40px -15px rgba(16, 185, 129, 0.25)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <div
-                    style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "50%",
-                      background: "rgba(16, 185, 129, 0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#10b981",
-                      fontSize: "1.4rem",
-                      border: "1px solid rgba(16, 185, 129, 0.4)",
-                    }}
+            <div className="card" style={{ border: "1.5px solid var(--fg)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Feedback Confirmed On-Chain
+                </div>
+                <span className="badge badge-black">FINALIZED</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+                <div className="card-sm" style={{ padding: "0.75rem" }}>
+                  <div style={{ fontSize: "0.7rem", color: "var(--fg-3)", textTransform: "uppercase" }}>Circuit</div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, marginTop: "0.2rem" }}>submitFeedback()</div>
+                </div>
+                <div className="card-sm" style={{ padding: "0.75rem" }}>
+                  <div style={{ fontSize: "0.7rem", color: "var(--fg-3)", textTransform: "uppercase" }}>Rating Verified</div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, marginTop: "0.2rem" }}>{ratingScore}/5 Stars (ZK Asserted)</div>
+                </div>
+                <div className="card-sm" style={{ padding: "0.75rem" }}>
+                  <div style={{ fontSize: "0.7rem", color: "var(--fg-3)", textTransform: "uppercase" }}>Network Fee</div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, marginTop: "0.2rem" }}>{result.txFee} {result.txFeeAsset}</div>
+                </div>
+                <div className="card-sm" style={{ padding: "0.75rem" }}>
+                  <div style={{ fontSize: "0.7rem", color: "var(--fg-3)", textTransform: "uppercase" }}>Prover DSL</div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, marginTop: "0.2rem" }}>Compact v0.23</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "0.75rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <span className="label" style={{ marginBottom: 0 }}>Commitment Hash</span>
+                  <button
+                    type="button"
+                    onClick={() => copyText(result.commitmentHex, true)}
+                    style={{ background: "none", border: "none", color: "var(--fg-3)", fontSize: "0.72rem", cursor: "pointer" }}
                   >
-                    ✓
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#f8fafc" }}>
-                      Buyer Feedback Confirmed On-Chain
-                    </h3>
-                    <p style={{ fontSize: "0.8rem", color: "#34d399", fontWeight: 600 }}>
-                      Midnight Preview Testnet • Zero-Knowledge Purchase Verified
-                    </p>
-                  </div>
+                    {copiedCommitment ? "Copied!" : "Copy"}
+                  </button>
                 </div>
-
-                <span
-                  style={{
-                    padding: "0.35rem 0.85rem",
-                    borderRadius: "50px",
-                    background: "rgba(16, 185, 129, 0.2)",
-                    color: "#6ee7b7",
-                    fontWeight: 800,
-                    fontSize: "0.75rem",
-                    border: "1px solid rgba(16, 185, 129, 0.4)",
-                  }}
-                >
-                  FINALITY CONFIRMED
-                </span>
+                <code className="mono-text">{result.commitmentHex}</code>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-                <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                    Circuit Executed
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "#34d399", fontWeight: 700 }}>
-                    submitFeedback(Bytes&lt;32&gt;)
-                  </div>
+              <div style={{ marginBottom: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <span className="label" style={{ marginBottom: 0 }}>Transaction Hash</span>
+                  <button
+                    type="button"
+                    onClick={() => copyText(result.txHash)}
+                    style={{ background: "none", border: "none", color: "var(--fg-3)", fontSize: "0.72rem", cursor: "pointer" }}
+                  >
+                    {copiedTx ? "Copied!" : "Copy"}
+                  </button>
                 </div>
-
-                <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                    Validated Rating Score
-                  </div>
-                  <div style={{ fontSize: "0.85rem", color: "#fbbf24", fontWeight: 700 }}>
-                    {"★".repeat(ratingScore)} ({ratingScore}/5 Stars)
-                  </div>
-                </div>
-
-                <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                    Transaction Fee
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "#f8fafc" }}>
-                    {result.txFee} {result.txFeeAsset}
-                  </div>
-                </div>
-
-                <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                    Prover Engine
-                  </div>
-                  <div style={{ fontSize: "0.85rem", color: "#06b6d4", fontWeight: 700 }}>
-                    Compact SNARK v0.23
-                  </div>
-                </div>
+                <code className="mono-text">{result.txHash}</code>
               </div>
 
-              {/* Public Commitment and TxHash */}
-              <div style={{ background: "rgba(0, 0, 0, 0.4)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.06)", marginBottom: "1.5rem" }}>
-                <div style={{ marginBottom: "0.75rem" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                    On-Chain Review Commitment Hash
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", color: "#34d399", wordBreak: "break-all" }}>
-                    {result.commitmentHex}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.25rem" }}>
-                    Midnight Transaction Hash
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", color: "#38bdf8", wordBreak: "break-all" }}>
-                    {result.txHash}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
-                  onClick={() => copyToClipboard(result.txHash)}
-                  className="btn-secondary"
-                  style={{ padding: "0.5rem 1rem", fontSize: "0.82rem" }}
+                  type="button"
+                  onClick={() => {
+                    setClaimedCommitment(result.commitmentHex);
+                    setActiveTab("verify");
+                  }}
+                  className="btn-outline"
+                  style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}
                 >
-                  {copiedTx ? "✓ Copied Hash!" : "Copy TxHash"}
+                  Verify In Audit Engine &rarr;
                 </button>
                 <a
                   href={NETWORK_CONFIG.explorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-primary"
-                  style={{ padding: "0.5rem 1.25rem", fontSize: "0.82rem" }}
+                  className="btn-outline"
+                  style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}
                 >
-                  Inspect in Midnight Explorer ↗
+                  Midnight Explorer
                 </a>
-                <button
-                  onClick={() => {
-                    setClaimedCommitment(result.commitmentHex);
-                    setActiveTab("verify");
-                  }}
-                  className="btn-secondary"
-                  style={{ padding: "0.5rem 1rem", fontSize: "0.82rem", borderColor: "rgba(6, 182, 212, 0.4)", color: "#06b6d4" }}
-                >
-                  Audit in Verifier Engine →
-                </button>
               </div>
             </div>
           )}
-        </>
-      ) : (
-        /* TAB 2: AUDIT VERIFIER ENGINE */
-        <div
-          className="glass-card"
-          style={{
-            padding: "2.25rem",
-            marginBottom: "2rem",
-            border: "1px solid rgba(6, 182, 212, 0.3)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-            <span style={{ fontSize: "1.75rem" }}>🛡️</span>
-            <div>
-              <h2 style={{ fontSize: "1.35rem", fontWeight: 800, color: "#f8fafc" }}>
-                On-Chain Commitment Verifier
-              </h2>
-              <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: "0.2rem" }}>
-                Publicly audit whether a review commitment hash matches an authentic buyer submission on the Midnight Preview ledger.
-              </p>
-            </div>
-          </div>
 
-          <form onSubmit={handleVerifyCommitment} style={{ marginTop: "1.5rem" }}>
-            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#cbd5e1", marginBottom: "0.5rem" }}>
-              Claimed 32-Byte Review Commitment Hash:
-            </label>
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <input
-                type="text"
-                id="claimedCommitment"
-                value={claimedCommitment}
-                onChange={(e) => setClaimedCommitment(e.target.value)}
-                placeholder="0x... or 32-byte hexadecimal review commitment hash"
-                style={{ flex: 1, minWidth: "260px" }}
-                required
-              />
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={verifyLoading}
-                id="verifyBtn"
-                style={{ whiteSpace: "nowrap", background: "linear-gradient(135deg, #06b6d4 0%, #10b981 100%)", padding: "0.75rem 1.75rem" }}
-              >
-                {verifyLoading ? (
-                  <>
-                    <span className="spinner" /> Auditing Ledger...
-                  </>
-                ) : (
-                  "Verify On-Chain"
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Sample Helper */}
-          <div style={{ marginTop: "1rem", fontSize: "0.75rem", color: "#64748b" }}>
-            <span>Try sample anchor commitment: </span>
-            <button
-              type="button"
-              onClick={() => setClaimedCommitment("0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa")}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#06b6d4",
-                textDecoration: "underline",
-                cursor: "pointer",
-                fontSize: "0.75rem",
-                padding: 0,
-              }}
-            >
-              Insert Genesis Ledger Commitment
-            </button>
-          </div>
-
-          {/* Verification Outcome */}
+          {/* VERIFY RESULT CARD */}
           {verifyResult && (
-            <div
-              className="fade-in"
-              style={{
-                marginTop: "1.75rem",
-                padding: "1.5rem",
-                borderRadius: "12px",
-                background: verifyResult.matches ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-                border: `1.5px solid ${verifyResult.matches ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                <span style={{ fontSize: "1.5rem" }}>{verifyResult.matches ? "✓" : "✕"}</span>
-                <div>
-                  <h4 style={{ fontSize: "1.1rem", fontWeight: 800, color: verifyResult.matches ? "#6ee7b7" : "#fca5a5" }}>
-                    {verifyResult.matches
-                      ? "Cryptographically Validated: Genuine Buyer Review"
-                      : "Verification Mismatch: Unregistered or Flagged Commitment"}
-                  </h4>
-                  <p style={{ fontSize: "0.8rem", color: "#94a3b8", marginTop: "0.2rem" }}>
-                    {verifyResult.matches
-                      ? "Commitment is verified active in the Midnight Preview ledger state."
-                      : "This commitment does not exist on-chain or has been permanently flagged."}
-                  </p>
+            <div className="card" style={{ border: `1.5px solid ${verifyResult.matches ? "var(--fg)" : "var(--fg-4)"}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase" }}>
+                  {verifyResult.matches ? "Verified: Authentic Review" : "Verification Failed"}
                 </div>
+                <span className="badge">{verifyResult.matches ? "VALID ON-CHAIN" : "DISPUTED / VOID"}</span>
               </div>
-
-              <div style={{ background: "rgba(0, 0, 0, 0.3)", padding: "0.75rem 1rem", borderRadius: "8px", fontFamily: "var(--font-mono)", fontSize: "0.78rem" }}>
-                <div style={{ color: "#64748b" }}>Audit Transaction Hash:</div>
-                <div style={{ color: "#cbd5e1", wordBreak: "break-all" }}>{verifyResult.txHash}</div>
-              </div>
+              <p style={{ fontSize: "0.82rem", color: "var(--fg-3)", marginBottom: "0.75rem" }}>
+                {verifyResult.matches
+                  ? "Commitment is verified active in the Midnight Preview public ledger state."
+                  : "This commitment hash does not match ledger records or has been permanently flagged."}
+              </p>
+              <div className="label" style={{ marginBottom: "0.2rem" }}>Verification Transaction Hash</div>
+              <code className="mono-text">{verifyResult.txHash}</code>
             </div>
           )}
-        </div>
-      )}
 
-      {/* Real-Time Telemetry Terminal */}
-      {logs.length > 0 && (
-        <div
-          className="glass-card"
-          style={{
-            padding: "1.5rem",
-            marginTop: "1.5rem",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Live ZK SNARK Prover & Network Telemetry
-              </span>
+          {/* WITNESS ENCLAVE INFO */}
+          <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "1.25rem" }}>
+            <div style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem", color: "var(--fg-2)" }}>
+              Private Witnesses (Never Transmitted On-Chain)
             </div>
-            <button
-              onClick={() => setLogs([])}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#64748b",
-                fontSize: "0.72rem",
-                cursor: "pointer",
-              }}
-            >
-              Clear Terminal
-            </button>
-          </div>
-
-          <div className="log-box" style={{ maxHeight: "220px" }}>
-            {logs.map((l, i) => (
-              <div key={i} className={`log-${l.type}`} style={{ lineHeight: 1.6 }}>
-                {l.msg}
+            {[
+              "buyerSecretKey() — 256-bit client entropy",
+              "orderInvoiceHash() — blind SHA-256 receipt digest",
+              "ratingScore() — star score asserted in SNARK",
+              "feedbackProofNonce() — ephemeral session salt",
+            ].map((w) => (
+              <div key={w} style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--fg-3)", lineHeight: 1.8 }}>
+                &bull; {w}
               </div>
             ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

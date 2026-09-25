@@ -43,28 +43,28 @@ By utilizing client-side zero-knowledge witness execution, verified cryptographi
 
 ## Level 2 & 3 UI Overhaul & Reviewer Improvements
 
-In response to reviewer feedback (**"work on the UI"**), the dApp interface has been completely transformed into an executive luxury dark-glass Web3 platform:
+In response to Level 3 reviewer feedback (**"reject due to frontend and UI — clean UI with 3D animation, different font styles, zero artificial color gradients"**), the application has been completely redesigned with an architectural, high-contrast, Swiss / brutalist luxury aesthetic:
 
-1. **3D Holographic Buyer Verification Pass**:
-   - Metallic brushed virtual badge with holographic card shimmer animations and 3D flip-to-inspect witness enclave.
-   - Shows verified rating stars, product name, masked commitment (`0x8F32••••••••C71A`), and Midnight ZK watermark.
+1. **Clean 3D Interactive WebGL Scene (Three.js)**:
+   - Dynamic real-time 3D dual-structure (wireframe inner lattice + faceted glass chrome polyhedron).
+   - Smooth mouse parallax and continuous inertial rotation — zero canned video loops or AI video artifacts.
 
-2. **Interactive Review Submission Portal**:
-   - Interactive star rating selector (1 to 5 stars) with micro-animations and dynamic sentiment badges.
-   - One-click credential presets (`iPhone 16 Order (5★)`, `Sony Headphones (5★)`, `Dell Laptop (4★)`).
-   - Digital VIP Proof Certificate receipt with on-chain transaction hash and Midnight Explorer deep links.
+2. **Monochrome High-Contrast Architectural Design System**:
+   - Curated monochrome palette: Off-white canvas (`#EBEBEB`), deep rich blacks (`#0A0A0A`), crisp structural 1px borders (`#D0D0D0`), and inverted solid badges.
+   - **Zero AI-generated color gradients**: No rainbow gradients, no neon glow, no purple/pink background blurs.
 
-3. **Dual-Mode Verifier Engine**:
-   - Allows public auditing of any 32-byte review commitment hash or transaction hash against Midnight ledger state.
+3. **Distinct Typographic Hierarchy**:
+   - **Display Headings**: *Barlow Condensed* (Weights 700/800/900, uppercase bold tracking) for bold editorial headers.
+   - **Body Copy & Form Controls**: *DM Sans* for optimal legibility and clean geometric layout.
+   - **Cryptographic Enclave & Code**: *JetBrains Mono* for hashes, witness parameters, circuits, and telemetry logs.
 
-4. **Executive Merchant Governance Center**:
-   - Tabbed modules for authority anchoring (`setMerchantCommitment`), review dispute flagging (`flagFeedback`), catalog rotation (`resetMerchantProduct`), and replay protection nonce bumping (`incrementSession`).
+4. **Structured 2-Column Professional Workspaces**:
+   - **/submit**: Left column provides quick presets, merchant input, private witness generator, and star selector; Right column features a live real-time ZK circuit log terminal and verified outcome card with 1-click clipboard actions.
+   - **/merchant**: Left column provides authority anchoring, review dispute flagging, catalog rotation, and session epoch bumping; Right column streams circuit telemetry and on-chain confirmation records.
+   - **/explorer**: Left column displays verified deployment evidence and live ledger registers; Right column features a tabbed raw JSON inspector and Midnight Subindexer GraphQL query viewer.
 
-5. **On-Chain Contract State Explorer & GraphQL Console**:
-   - Live ledger state polling with real-time refresh of all 8 public fields, raw JSON inspector, and live Midnight Subindexer GraphQL query console.
-
-6. **Interactive Wallet Connection Modal**:
-   - Multi-wallet connection modal supporting **Midnight Lace Wallet** and **1AM Wallet** with live network telemetry.
+5. **Multi-Wallet DApp Connector Modal**:
+   - Seamless integration with **Midnight Lace Wallet** and **1AM Wallet** with automatic network binding to the Midnight Preview testnet.
 
 ---
 

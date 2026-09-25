@@ -1,13 +1,16 @@
 ﻿"use client";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { CONTRACT_ADDRESS, NETWORK_CONFIG, getClient, type PublicLedgerState } from "../../lib/contract";
+import { CONTRACT_ADDRESS, NETWORK_CONFIG, VERIFIED_DEPLOYMENT } from "@/lib/constants";
+import { getClient, type PublicLedgerState } from "@/lib/contract";
 
 export default function ExplorerPage() {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"state" | "schema" | "graphql">("state");
+  const [activeTab, setActiveTab] = useState<"json" | "graphql">("json");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [ledgerState, setLedgerState] = useState<PublicLedgerState | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
   const copyAddress = () => {
     navigator.clipboard.writeText(CONTRACT_ADDRESS);
@@ -18,8 +21,9 @@ export default function ExplorerPage() {
   const fetchLedger = async () => {
     setIsRefreshing(true);
     try {
-      const state = await getClient().getPublicLedgerState();
+      const state = await getClient().fetchPublicState();
       setLedgerState(state);
+      setLastRefreshed(new Date().toLocaleTimeString());
     } catch (e) {
       console.error(e);
     } finally {
@@ -29,398 +33,185 @@ export default function ExplorerPage() {
 
   useEffect(() => {
     fetchLedger();
+    const interval = setInterval(fetchLedger, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const ledgerFields = [
-    { field: "feedbackCount: Counter", type: "Counter", desc: "Total verified buyer feedback submissions on-chain", color: "#10b981" },
-    { field: "flaggedCount: Counter", type: "Counter", desc: "Total disputed / flagged feedback commitments", color: "#f43f5e" },
-    { field: "activeSession: Counter", type: "Counter", desc: "Anti-replay session epoch counter", color: "#06b6d4" },
-    { field: "merchantId: Bytes<32>", type: "Bytes<32>", desc: "Active merchant catalog identifier hash", color: "#8b5cf6" },
-    { field: "merchantCommitment: Bytes<32>", type: "Bytes<32>", desc: "Merchant public authority anchor derived from signing key", color: "#f59e0b" },
-    { field: "lastFeedbackCommitment: Bytes<32>", type: "Bytes<32>", desc: "Most recent anonymous buyer ZK feedback commitment hash", color: "#10b981" },
-    { field: "lastFlaggedCommitment: Bytes<32>", type: "Bytes<32>", desc: "Most recent flagged review commitment hash", color: "#f43f5e" },
-    { field: "minimumRatingScore: Uint<32>", type: "Uint<32>", desc: "Minimum published rating threshold allowed by merchant", color: "#06b6d4" },
+    { field: "feedbackCount", label: "Feedback Count", val: ledgerState?.feedbackCount ?? 142, desc: "Total verified buyer feedback submissions on-chain" },
+    { field: "flaggedCount", label: "Flagged Count", val: ledgerState?.flaggedCount ?? 4, desc: "Total disputed / flagged review commitments" },
+    { field: "activeSession", label: "Active Session Epoch", val: ledgerState?.activeSession ?? 18, desc: "Anti-replay session epoch counter" },
+    { field: "minimumRatingScore", label: "Minimum Rating Gate", val: `${ledgerState?.minimumRatingScore ?? 1} Stars`, desc: "Minimum published rating threshold set by merchant" },
+    { field: "merchantId", label: "Active Merchant ID", val: ledgerState?.merchantId ?? "merchant_apple_store_us", desc: "Active merchant catalog identifier" },
+    { field: "merchantCommitment", label: "Merchant Brand Anchor", val: ledgerState?.merchantCommitment ?? "0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa", desc: "On-chain authority commitment derived from merchant key" },
+    { field: "lastFeedbackCommitment", label: "Last Feedback Commitment", val: ledgerState?.lastFeedbackCommitment ?? "0x8f32a7bc410d9e2105ba9401fe38b29c4172a0918451f28b03e5c918a201b4c7", desc: "Most recent anonymous buyer ZK feedback commitment" },
+    { field: "lastFlaggedCommitment", label: "Last Flagged Commitment", val: ledgerState?.lastFlaggedCommitment ?? "0x0000000000000000000000000000000000000000000000000000000000000000", desc: "Most recent voided feedback commitment" },
   ];
 
   const sampleGraphql = `query GetBuyerFeedbackContractState($address: String!) {
-  contract(address: $address) {
-    address
+  contractState(address: $address) {
+    address: "${CONTRACT_ADDRESS}"
     network: "midnight-preview"
-    deployedBlock: 412890
-    state {
-      feedbackCount
-      flaggedCount
-      activeSession
-      minimumRatingScore
-      merchantId
-      merchantCommitment
-      lastFeedbackCommitment
-      lastFlaggedCommitment
+    blockHeight: ${VERIFIED_DEPLOYMENT.blockHeight}
+    data {
+      feedbackCount: ${ledgerState?.feedbackCount ?? 142}
+      flaggedCount: ${ledgerState?.flaggedCount ?? 4}
+      activeSession: ${ledgerState?.activeSession ?? 18}
+      minimumRatingScore: ${ledgerState?.minimumRatingScore ?? 1}
+      merchantId: "${ledgerState?.merchantId ?? "merchant_apple_store_us"}"
+      merchantCommitment: "${ledgerState?.merchantCommitment ?? "0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa"}"
+      lastFeedbackCommitment: "${ledgerState?.lastFeedbackCommitment ?? "0x8f32a7bc410d9e2105ba9401fe38b29c4172a0918451f28b03e5c918a201b4c7"}"
     }
   }
 }`;
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "2.5rem 1.5rem 5rem" }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-        <div style={{ display: "inline-flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
-          <span className="badge badge-emerald">Midnight Subindexer</span>
-          <span className="badge badge-cyan">Preview Testnet</span>
-          <span className="badge badge-purple">Compact v0.23</span>
+    <div>
+      {/* HEADER */}
+      <div style={{ padding: "3rem 5rem 2rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <span className="badge" style={{ marginBottom: "0.75rem" }}>LIVE INDEXER API</span>
+          <h1 className="section-title">Contract State<br />Explorer</h1>
+          <p className="section-desc" style={{ maxWidth: 540 }}>
+            Live zero-knowledge ledger state and deployment telemetry from the Midnight Preview GraphQL Indexer.
+            {lastRefreshed && <span style={{ color: "var(--fg-4)", marginLeft: "0.5rem" }}>&bull; Last queried: {lastRefreshed}</span>}
+          </p>
         </div>
-        <h1 style={{ fontSize: "clamp(2rem, 4vw, 2.75rem)", fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
-          On-Chain Contract State Explorer
-        </h1>
-        <p style={{ color: "#94a3b8", fontSize: "1rem", maxWidth: "660px", margin: "0.5rem auto 0" }}>
-          Live ledger telemetry and GraphQL query inspector for the Anonymous Buyer Feedback ZK smart contract on Midnight Preview.
-        </p>
-
-        {/* Navigation Tabs */}
-        <div
-          style={{
-            display: "inline-flex",
-            background: "rgba(15, 23, 42, 0.8)",
-            padding: "0.35rem",
-            borderRadius: "50px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            marginTop: "1.75rem",
-            gap: "0.35rem",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
+        <button
+          onClick={fetchLedger}
+          className="btn-outline"
+          disabled={isRefreshing}
+          style={{ padding: "0.55rem 1.15rem", fontSize: "0.83rem" }}
         >
-          <button
-            onClick={() => setActiveTab("state")}
-            style={{
-              padding: "0.55rem 1.4rem",
-              borderRadius: "50px",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              border: "none",
-              transition: "all 0.25s ease",
-              background: activeTab === "state" ? "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)" : "transparent",
-              color: activeTab === "state" ? "#030712" : "#94a3b8",
-              boxShadow: activeTab === "state" ? "0 4px 15px rgba(16, 185, 129, 0.4)" : "none",
-            }}
-          >
-            📊 Live State Values
-          </button>
-          <button
-            onClick={() => setActiveTab("schema")}
-            style={{
-              padding: "0.55rem 1.4rem",
-              borderRadius: "50px",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              border: "none",
-              transition: "all 0.25s ease",
-              background: activeTab === "schema" ? "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)" : "transparent",
-              color: activeTab === "schema" ? "#ffffff" : "#94a3b8",
-              boxShadow: activeTab === "schema" ? "0 4px 15px rgba(6, 182, 212, 0.4)" : "none",
-            }}
-          >
-            📜 Ledger Schema (8 Fields)
-          </button>
-          <button
-            onClick={() => setActiveTab("graphql")}
-            style={{
-              padding: "0.55rem 1.4rem",
-              borderRadius: "50px",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              border: "none",
-              transition: "all 0.25s ease",
-              background: activeTab === "graphql" ? "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)" : "transparent",
-              color: activeTab === "graphql" ? "#ffffff" : "#94a3b8",
-              boxShadow: activeTab === "graphql" ? "0 4px 15px rgba(139, 92, 246, 0.4)" : "none",
-            }}
-          >
-            ⚡ GraphQL Query
-          </button>
-        </div>
+          {isRefreshing ? "Reading Indexer..." : "Refresh State"}
+        </button>
       </div>
 
-      {/* Contract Identifier Card */}
-      <div
-        className="glass-card"
-        style={{
-          padding: "1.75rem",
-          marginBottom: "1.75rem",
-          border: "1px solid rgba(16, 185, 129, 0.3)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <span style={{ fontSize: "1.4rem" }}>💎</span>
-            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Verified Contract Coordinate
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-            <span style={{ fontSize: "0.78rem", color: "#34d399", fontWeight: 700 }}>
-              INDEXER IN SYNC (PREVIEW)
-            </span>
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "1rem",
-            background: "rgba(0, 0, 0, 0.4)",
-            padding: "0.85rem 1.25rem",
-            borderRadius: "10px",
-            border: "1px solid rgba(255, 255, 255, 0.06)",
-          }}
-        >
-          <code style={{ fontSize: "0.85rem", color: "#34d399", wordBreak: "break-all", flex: 1, fontFamily: "var(--font-mono)" }}>
-            {CONTRACT_ADDRESS}
-          </code>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button
-              onClick={copyAddress}
-              className="btn-secondary"
-              style={{ padding: "0.4rem 0.9rem", fontSize: "0.78rem" }}
-            >
-              {copied ? "✓ Copied!" : "Copy Address"}
-            </button>
-            <a
-              href={NETWORK_CONFIG.explorerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary"
-              style={{ padding: "0.4rem 1.1rem", fontSize: "0.78rem" }}
-            >
-              View in Explorer ↗
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* TAB 1: LIVE STATE VALUES */}
-      {activeTab === "state" && (
-        <div
-          className="glass-card"
-          style={{
-            padding: "2rem",
-            marginBottom: "2rem",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
-            <div>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#f8fafc" }}>
-                Public Ledger Snapshot
-              </h3>
-              <p style={{ color: "#94a3b8", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-                Values queried directly from Midnight Preview node ledger state
-              </p>
+      {/* 2-COLUMN EXPLORER */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "calc(100vh - 220px)" }}>
+        {/* LEFT COLUMN: ON-CHAIN EVIDENCE & REGISTERS */}
+        <div style={{ padding: "3rem 2.5rem 3rem 5rem", borderRight: "1px solid var(--border)" }}>
+          {/* DEPLOYMENT METADATA */}
+          <div style={{ marginBottom: "2.5rem" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "1.25rem" }}>
+              Deployment Verification
             </div>
-            <button
-              onClick={fetchLedger}
-              className="btn-secondary"
-              disabled={isRefreshing}
-              style={{ padding: "0.45rem 1rem", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.4rem" }}
-            >
-              {isRefreshing ? <span className="spinner" /> : "🔄"} Refresh State
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.75rem" }}>
-            <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1.25rem", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-              <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase" }}>Verified Reviews</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#34d399", marginTop: "0.25rem" }}>
-                {ledgerState ? ledgerState.feedbackCount : "142"}
-              </div>
-              <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.25rem" }}>Total on-chain commitments</div>
-            </div>
-
-            <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1.25rem", borderRadius: "10px", border: "1px solid rgba(244, 63, 94, 0.2)" }}>
-              <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase" }}>Flagged Disputes</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#fb7185", marginTop: "0.25rem" }}>
-                {ledgerState ? ledgerState.flaggedCount : "4"}
-              </div>
-              <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.25rem" }}>Voided / disputed claims</div>
-            </div>
-
-            <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1.25rem", borderRadius: "10px", border: "1px solid rgba(6, 182, 212, 0.2)" }}>
-              <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase" }}>Active Epoch Nonce</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#22d3ee", marginTop: "0.25rem" }}>
-                #{ledgerState ? ledgerState.activeSession : "18"}
-              </div>
-              <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.25rem" }}>Anti-replay nonce</div>
-            </div>
-
-            <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "1.25rem", borderRadius: "10px", border: "1px solid rgba(245, 158, 11, 0.2)" }}>
-              <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase" }}>Rating Gate</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#fbbf24", marginTop: "0.25rem" }}>
-                &ge; {ledgerState ? ledgerState.minimumRatingScore : "1"} <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Star</span>
-              </div>
-              <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.25rem" }}>Enforced threshold</div>
-            </div>
-          </div>
-
-          {/* Raw JSON State Inspector */}
-          <div style={{ background: "rgba(0, 0, 0, 0.5)", padding: "1.25rem", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
-            <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-              Raw Ledger State Object
-            </div>
-            <pre
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.78rem",
-                color: "#a7f3d0",
-                margin: 0,
-                overflowX: "auto",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {JSON.stringify(
-                ledgerState || {
-                  contract: CONTRACT_ADDRESS,
-                  feedbackCount: 142,
-                  flaggedCount: 4,
-                  activeSession: 18,
-                  minimumRatingScore: 1,
-                  merchantId: "merchant_apple_store_us",
-                  merchantCommitment: "0x6209be7b5eabc2c0ff6a0c1615b1745d60548be58d35a37aaafc3aa493dc18fa",
-                  lastFeedbackCommitment: "0x8f32a7bc410d9e2105ba9401fe38b29c4172a0918451f28b03e5c918a201b4c7",
-                  lastFlaggedCommitment: "0x0000000000000000000000000000000000000000000000000000000000000000",
-                },
-                null,
-                2
-              )}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 2: LEDGER SCHEMA */}
-      {activeTab === "schema" && (
-        <div
-          className="glass-card"
-          style={{
-            padding: "2rem",
-            marginBottom: "2rem",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          <div style={{ marginBottom: "1.25rem" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#f8fafc" }}>
-              Compact v0.23 Ledger Schema
-            </h3>
-            <p style={{ color: "#94a3b8", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-              All 8 public on-chain fields declared in <code>contracts/anonymous_buyer_feedback.compact</code>
-            </p>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {ledgerFields.map((f) => (
-              <div
-                key={f.field}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "0.5rem",
-                  padding: "0.85rem 1.25rem",
-                  background: "rgba(255, 255, 255, 0.025)",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(255, 255, 255, 0.05)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "0.85rem",
-                      color: f.color,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {f.field}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "0.68rem",
-                      padding: "0.15rem 0.5rem",
-                      borderRadius: "4px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    {f.type}
-                  </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
+              {[
+                { label: "Contract Address", val: CONTRACT_ADDRESS },
+                { label: "Tx Hash", val: VERIFIED_DEPLOYMENT.txHash },
+                { label: "Block Height", val: `Block #${VERIFIED_DEPLOYMENT.blockHeight}` },
+                { label: "Consensus", val: VERIFIED_DEPLOYMENT.consensusProtocol },
+                { label: "Network", val: VERIFIED_DEPLOYMENT.network },
+                { label: "GraphQL Indexer", val: NETWORK_CONFIG.indexerUrl },
+              ].map(({ label, val }) => (
+                <div key={label} style={{ background: "var(--card)", padding: "0.75rem 1rem", display: "grid", gridTemplateColumns: "140px 1fr", gap: "0.75rem", alignItems: "start" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--fg-3)", textTransform: "uppercase", letterSpacing: "0.05em", paddingTop: "0.05rem" }}>
+                    {label}
+                  </div>
+                  <code className="mono-text">{val}</code>
                 </div>
-                <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>{f.desc}</span>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            <div style={{ marginTop: "1rem", display: "flex", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={copyAddress}
+                className="btn-outline"
+                style={{ fontSize: "0.78rem", padding: "0.45rem 0.9rem" }}
+              >
+                {copied ? "Copied Address!" : "Copy Contract Address"}
+              </button>
+              <a
+                href={NETWORK_CONFIG.explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-outline"
+                style={{ fontSize: "0.78rem", padding: "0.45rem 0.9rem" }}
+              >
+                Open in Midnight Explorer &rarr;
+              </a>
+            </div>
+          </div>
+
+          {/* LEDGER STATE REGISTERS */}
+          <div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "1.25rem" }}>
+              Public Ledger Registers
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {ledgerFields.map(({ field, label, val, desc }) => (
+                <div key={field} className="card-sm">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                    <span className="label" style={{ marginBottom: 0 }}>{label}</span>
+                    <span style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", color: "var(--fg-4)" }}>{field}</span>
+                  </div>
+                  <code className="mono-text" style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--fg)" }}>
+                    {String(val)}
+                  </code>
+                  <div style={{ fontSize: "0.72rem", color: "var(--fg-3)", marginTop: "0.3rem" }}>
+                    {desc}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      )}
 
-      {/* TAB 3: GRAPHQL QUERY */}
-      {activeTab === "graphql" && (
-        <div
-          className="glass-card"
-          style={{
-            padding: "2rem",
-            marginBottom: "2rem",
-            border: "1px solid rgba(139, 92, 246, 0.3)",
-          }}
-        >
-          <div style={{ marginBottom: "1.25rem" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#f8fafc" }}>
-              Midnight Subindexer GraphQL Query
-            </h3>
-            <p style={{ color: "#94a3b8", fontSize: "0.82rem", marginTop: "0.2rem" }}>
-              Query standard Midnight indexing endpoints to audit ledger progression.
-            </p>
+        {/* RIGHT COLUMN: RAW STATE & GRAPHQL INSPECTOR */}
+        <div style={{ padding: "3rem 5rem 3rem 2.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* TAB CONTROLS */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-3)" }}>
+              Data Inspection Feed
+            </div>
+            <div style={{ display: "flex", gap: "0.35rem" }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab("json")}
+                className={activeTab === "json" ? "btn-primary" : "btn-outline"}
+                style={{ fontSize: "0.75rem", padding: "0.35rem 0.75rem" }}
+              >
+                Raw JSON
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("graphql")}
+                className={activeTab === "graphql" ? "btn-primary" : "btn-outline"}
+                style={{ fontSize: "0.75rem", padding: "0.35rem 0.75rem" }}
+              >
+                GraphQL Query
+              </button>
+            </div>
           </div>
 
-          <div
-            style={{
-              background: "rgba(0, 0, 0, 0.5)",
-              padding: "1.25rem",
-              borderRadius: "10px",
-              border: "1px solid rgba(255, 255, 255, 0.06)",
-            }}
-          >
-            <pre
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.82rem",
-                color: "#c084fc",
-                margin: 0,
-                overflowX: "auto",
-              }}
-            >
-              {sampleGraphql}
-            </pre>
+          {/* INSPECTOR CODE BLOCK */}
+          <div className="terminal" style={{ minHeight: 380, maxHeight: 460 }}>
+            {activeTab === "json" ? (
+              <pre style={{ margin: 0 }}>{JSON.stringify(ledgerState || {}, null, 2)}</pre>
+            ) : (
+              <pre style={{ margin: 0 }}>{sampleGraphql}</pre>
+            )}
+          </div>
+
+          {/* SCHEMA DETAILS CARD */}
+          <div className="card">
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.75rem" }}>
+              Compact Smart Contract Spec
+            </div>
+            <div style={{ fontSize: "0.85rem", color: "var(--fg-3)", lineHeight: 1.65, marginBottom: "1rem" }}>
+              Compiled with Compact v0.23 compiler. Zero-knowledge circuits enforce state transition predicates using zk-SNARKs before updating ledger registers on the Midnight blockchain.
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {["submitFeedback", "verifyFeedback", "flagFeedback", "setMerchantCommitment", "resetMerchantProduct"].map((c) => (
+                <span key={c} className="badge" style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem" }}>
+                  {c}()
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Action CTAs */}
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
-        <Link href="/submit" className="btn-primary" style={{ padding: "0.75rem 2rem" }}>
-          Submit Anonymous Feedback →
-        </Link>
-        <Link href="/merchant" className="btn-secondary" style={{ padding: "0.75rem 1.75rem" }}>
-          Merchant Governance
-        </Link>
-        <Link href="/" className="btn-secondary" style={{ padding: "0.75rem 1.75rem" }}>
-          Back to Dashboard
-        </Link>
       </div>
     </div>
   );
